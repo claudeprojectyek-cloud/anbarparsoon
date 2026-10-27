@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>try{if(localStorage.getItem('anbar_auth_ok')!=='1')location.replace('login.html');}catch(e){}</script>
+<title>دسته‌بندی | انبار پرسون بام بین‌الملل</title>
+<link rel="stylesheet" href="assets/css/vazirmatn-font-face.css?v=3.0.0">
+<meta name="theme-color" content="#16324f">
+<link rel="stylesheet" href="assets/css/style.min.css?v=3.0.0">
+</head>
+<body>
+<script>document.documentElement.setAttribute('data-theme', (function(){try{return localStorage.getItem('anbar-parsoon-theme')||'light'}catch(e){return 'light'}})());</script>
+<div class="category-page">
+  <header class="category-page-header">
+    <div class="brand"><div class="brand-mark">پب</div><div><div class="brand-name">پرسون بام بین‌الملل</div><div class="brand-sub">نمای فقط‌خواندنی دسته‌بندی</div></div></div>
+    <a class="btn btn-ghost btn-sm" href="index.html">بازگشت به سامانه</a>
+  </header>
+  <div id="catRoot"></div>
+  <footer class="category-page-footer">این صفحه فقط‌خواندنی است.</footer>
+</div>
+<script src="assets/js/vendor/bcrypt.min.js"></script>
+<script src="assets/js/offline/seed-data.js"></script>
+<script src="assets/js/offline/offline-api.js"></script>
+<script>
+(function () {
+  function h(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+  function n(v){v=Number(v)||0;return (Number.isInteger(v)?v:Math.round(v*100)/100).toLocaleString('fa-IR');}
+  var name=(new URLSearchParams(location.search).get('name')||'').trim(), root=document.getElementById('catRoot');
+  if(!name){root.innerHTML='<div class="state-block"><div class="state-title">دسته‌بندی مشخص نشده است.</div></div>';return;}
+  document.title=name+' | دسته‌بندی | انبار پرسون بام بین‌الملل';
+  fetch('api/items.php?category='+encodeURIComponent(name)+'&sort=name&dir=asc').then(r=>r.json()).then(function(j){
+    var items=(j&&j.data)||[];
+    if(!items.length){root.innerHTML='<h1 class="category-page-title">'+h(name)+'</h1><div class="state-block"><div class="state-title">این دسته‌بندی خالی است یا وجود ندارد.</div></div>';return;}
+    var total=items.reduce(function(s,i){return s+Number(i.quantity)},0);
+    root.innerHTML='<h1 class="category-page-title">'+h(name)+'</h1>'+
+     '<div class="category-page-stats"><div class="stat-card"><div class="stat-label">تعداد اقلام</div><div class="stat-value">'+n(items.length)+'</div></div>'+
+     '<div class="stat-card"><div class="stat-label">جمع کل موجودی</div><div class="stat-value">'+n(total)+'</div></div></div>'+
+     '<div class="table-wrap"><table class="items-table"><thead><tr><th>نام کالا</th><th>برند / مشخصات</th><th>تعداد</th><th>واحد</th></tr></thead><tbody>'+
+     items.map(function(i){return '<tr><td>'+h(i.name)+'</td><td class="muted">'+(i.brand?h(i.brand):'—')+'</td><td class="qty-cell">'+n(i.quantity)+'</td><td>'+h(i.unit)+'</td></tr>';}).join('')+
+     '</tbody></table></div><div class="items-cards category-page-cards">'+
+     items.map(function(i){return '<div class="item-card"><div class="item-card-top"><div><div class="item-card-title">'+h(i.name)+'</div>'+(i.brand?'<div class="item-card-brand">'+h(i.brand)+'</div>':'')+'</div></div><div class="item-card-row"><span class="muted">تعداد</span><span>'+n(i.quantity)+' '+h(i.unit)+'</span></div></div>';}).join('')+'</div>';
+  });
+})();
+</script>
+</body>
+</html>

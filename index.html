@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<script>try{if(localStorage.getItem('anbar_auth_ok')!=='1')location.replace('login.html');}catch(e){}</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مدیریت انبار | پرسون بام بین‌الملل</title>
+
+<!-- فونت Self-host شده (بدون وابستگی به CDN خارجی) — نیازی به preconnect نیست. -->
+<link rel="preload" as="font" type="font/woff2" crossorigin href="assets/fonts/Vazirmatn[wght].woff2?v=2.0.25">
+<link rel="stylesheet" href="assets/css/vazirmatn-font-face.css?v=2.0.25">
+
+<meta name="theme-color" content="#16324f">
+<link rel="icon" href="assets/icons/icon-192.webp" type="image/webp">
+<link rel="apple-touch-icon" href="assets/icons/icon-192.webp">
+
+<link rel="stylesheet" href="assets/css/style.min.css?v=2.0.25">
+
+<!-- نکته‌ی عملکردی (نسخه‌ی ۱.۱.۲): کتابخانه‌های سنگین Chart.js / SheetJS (اکسل) /
+     jsPDF / html2canvas / qrcode دیگر اینجا در بارگذاری اولیه‌ی هر صفحه لود
+     نمی‌شوند؛ فقط زمانی که واقعاً لازم می‌شوند (باز شدن داشبورد، خروجی اکسل/PDF،
+     یا نمایش QR) به‌صورت پویا (Lazy Load) در app.js بارگذاری می‌شوند. -->
+</head>
+<body>
+
+<div class="app-shell" id="appShell">
+
+    <!-- ============================= سایدبار ============================= -->
+    <aside class="app-sidebar" id="appSidebar">
+        <div class="brand">
+            <div class="brand-mark">پب</div>
+            <div>
+                <div class="brand-name">پرسون بام بین‌الملل</div>
+                <div class="brand-sub">سامانه مدیریت انبار</div>
+            </div>
+        </div>
+
+        <div class="nav-section-label">منو</div>
+        <ul class="nav-list">
+            <li>
+                <button class="nav-link active" data-view="dashboard" type="button">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+                    داشبورد
+                </button>
+            </li>
+            <li>
+                <button class="nav-link" data-view="list" type="button">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg>
+                    لیست کامل کالاها
+                </button>
+            </li>
+            <li>
+                <button class="nav-link" data-view="categories" type="button">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>
+                    دسته‌بندی‌ها
+                </button>
+            </li>
+            <li>
+                <button class="nav-link" data-view="history" type="button">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>
+                    تاریخچه
+                </button>
+            </li>
+            <li>
+                <button class="nav-link" id="myProfileNavBtn" type="button">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    حساب من
+                </button>
+            </li>
+        </ul>
+
+        <div class="nav-section-label">دسته‌بندی‌ها</div>
+        <ul class="category-nav-list" id="sidebarCategoryList">
+            <!-- با جاوااسکریپت پر می‌شود -->
+        </ul>
+
+        <div class="sidebar-footer">
+            <div class="active-user-box" id="activeUserBox">
+                <div class="active-user-info">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <span id="activeUserName">بازدیدکننده</span>
+                </div>
+                <button class="active-user-switch" id="notMeBtn" type="button" hidden data-write-trigger>جدا کردن دستگاه</button>
+            </div>
+            <button class="btn btn-ghost btn-sm logout-btn" id="logoutBtn" type="button">
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+                خروج از سامانه
+            </button>
+            <div class="sidebar-copyright">پرسون بام بین‌الملل &copy; <span id="footerYear"></span> — نسخه‌ی <span id="appVersionLabel">3.0.0 — آفلاین</span></div>
+            <!-- نسخه‌ی ۲.۰.۱۱: فقط وقتی آپلود کش سراسری به‌خاطر محدودیت حجم هاست
+                 (۴۱۳/خطای مشابه) شکست بخورد، یک‌بار همین‌جا نمایش داده می‌شود. -->
+            <div class="sidebar-export-cache-warning" id="exportCacheWarning" hidden>
+                کش سراسری PDF/اکسل فعال نیست — به مدیر هاست اطلاع دهید.
+            </div>
+        </div>
+    </aside>
+
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <!-- ============================= هدر ============================= -->
+    <header class="app-header">
+        <div class="util-row">
+            <button class="btn btn-ghost menu-toggle" id="menuToggleBtn" type="button" aria-label="باز کردن منو">
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+            </button>
+            <div class="header-title">
+                <h1 id="pageTitle">داشبورد انبار</h1>
+                <span id="pageSubtitle">نمای کلی موجودی و آمار انبار</span>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-ghost theme-toggle" id="themeToggleBtn" type="button" aria-label="تغییر حالت تاریک/روشن" title="حالت تاریک/روشن">
+                <svg class="btn-icon icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+                <svg class="btn-icon icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>
+            </button>
+            <button class="btn btn-accent" id="addItemBtn" type="button" data-write-trigger>
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+                افزودن کالا
+            </button>
+        </div>
+    </header>
+
+    <!-- ============================= محتوای اصلی ============================= -->
+    <main class="app-main">
+
+        <!-- بنر بازدیدکننده (نسخه‌ی ۲.۰.۲) — فقط وقتی دستگاه جاری به هیچ‌یک
+             از سه پروفایل ثابت وصل نیست نمایش داده می‌شود. دکمه‌های نوشتنی
+             در این حالت هم فرانت‌اند و هم سمت سرور مسدود می‌شوند. -->
+        <div class="profile-banner" id="profileBanner" hidden>
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+            <span>شما فقط بازدیدکننده هستید و امکان ثبت تغییر (افزودن، ویرایش، ورود/خروج کالا) ندارید.</span>
+            <button class="btn btn-primary btn-sm" id="completeProfileBtn" type="button">انتخاب پروفایل</button>
+        </div>
+
+        <!-- ---------- نمای داشبورد ---------- -->
+        <section class="view active" id="view-dashboard">
+            <div class="stat-grid" id="statGrid">
+                <!-- کارت‌های آماری با جاوااسکریپت -->
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="panel">
+                    <h3>مقایسه موجودی بین دسته‌بندی‌ها</h3>
+                    <div class="chart-wrap"><canvas id="categoryChart"></canvas></div>
+                </div>
+                <div class="panel">
+                    <h3>
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:#c23a3a"><path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+                        هشدار موجودی کم
+                    </h3>
+                    <ul class="low-stock-list" id="lowStockList">
+                        <!-- با جاوااسکریپت -->
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ---------- نمای لیست کامل ---------- -->
+        <section class="view" id="view-list">
+            <div class="toolbar">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="جست‌وجو در نام کالا، برند، دسته‌بندی، توضیحات...">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                </div>
+                <select class="select-field" id="filterCategory">
+                    <option value="">همه‌ی دسته‌بندی‌ها</option>
+                </select>
+                <select class="select-field" id="filterUnit">
+                    <option value="">همه‌ی واحدها</option>
+                </select>
+                <input type="number" class="num-field" id="filterMinQty" placeholder="حداقل تعداد" min="0">
+                <input type="number" class="num-field" id="filterMaxQty" placeholder="حداکثر تعداد" min="0">
+                <button class="btn btn-ghost btn-sm" id="clearFiltersBtn" type="button">پاک‌کردن فیلترها</button>
+                <div class="toolbar-spacer"></div>
+                <div class="util-row">
+                    <button class="btn btn-outline btn-sm" id="exportExcelBtn" type="button">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                        خروجی اکسل
+                    </button>
+                    <button class="btn btn-outline btn-sm" id="exportPdfBtn" type="button">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+                        خروجی PDF
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th data-sort="category">دسته‌بندی <span class="sort-arrow">▲</span></th>
+                            <th data-sort="name">نام کالا <span class="sort-arrow">▲</span></th>
+                            <th>برند / مشخصات</th>
+                            <th data-sort="quantity">تعداد <span class="sort-arrow">▲</span></th>
+                            <th>واحد</th>
+                            <th>توضیحات</th>
+                            <th data-sort="updated_at">آخرین ویرایش <span class="sort-arrow">▲</span></th>
+                            <th>عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="itemsTableBody">
+                        <!-- با جاوااسکریپت -->
+                    </tbody>
+                </table>
+                <div class="state-block" id="tableEmptyState" style="display:none;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                    <div class="state-title">نتیجه‌ای یافت نشد</div>
+                    <div class="state-sub">فیلترها یا عبارت جست‌وجو را تغییر دهید.</div>
+                </div>
+                <div class="state-block" id="tableLoadingState" style="display:none;">
+                    <div class="spinner"></div>
+                    <div class="state-sub">در حال بارگذاری اطلاعات...</div>
+                </div>
+            </div>
+
+            <div class="items-cards" id="itemsCardsWrap">
+                <!-- نمای کارتی موبایل با جاوااسکریپت -->
+            </div>
+        </section>
+
+        <!-- ---------- نمای دسته‌بندی‌ها ---------- -->
+        <section class="view" id="view-categories">
+            <div class="category-grid" id="categoryGrid">
+                <!-- با جاوااسکریپت -->
+            </div>
+        </section>
+
+        <!-- ---------- نمای تاریخچه ---------- -->
+        <section class="view" id="view-history">
+            <div class="toolbar">
+                <select class="select-field" id="historyFilterCategory">
+                    <option value="">همه‌ی دسته‌بندی‌ها</option>
+                </select>
+                <select class="select-field" id="historyFilterType">
+                    <option value="">همه‌ی انواع تراکنش</option>
+                    <option value="in">ورود</option>
+                    <option value="out">خروج</option>
+                    <option value="created">افزودن کالا</option>
+                    <option value="edited">ویرایش کالا</option>
+                    <option value="deleted">حذف کالا</option>
+                </select>
+                <input type="date" class="select-field" id="historyFilterFrom" title="از تاریخ">
+                <input type="date" class="select-field" id="historyFilterTo" title="تا تاریخ">
+                <button class="btn btn-ghost btn-sm" id="historyClearFiltersBtn" type="button">پاک‌کردن فیلترها</button>
+            </div>
+
+            <div class="table-wrap">
+                <table class="items-table" id="historyTable">
+                    <thead>
+                        <tr>
+                            <th>تاریخ و ساعت</th>
+                            <th>نوع تراکنش</th>
+                            <th>کالا</th>
+                            <th>دسته‌بندی</th>
+                            <th>تغییر تعداد</th>
+                            <th>گیرنده / مقصد</th>
+                            <th>توضیحات</th>
+                            <th>واردکننده</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                        <!-- با جاوااسکریپت -->
+                    </tbody>
+                </table>
+                <div class="state-block" id="historyEmptyState" style="display:none;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/></svg>
+                    <div class="state-title">هیچ تراکنشی یافت نشد</div>
+                    <div class="state-sub">فیلترها را تغییر دهید یا بازه‌ی زمانی دیگری را امتحان کنید.</div>
+                </div>
+                <div class="state-block" id="historyLoadingState" style="display:none;">
+                    <div class="spinner"></div>
+                    <div class="state-sub">در حال بارگذاری تاریخچه...</div>
+                </div>
+            </div>
+
+            <div class="history-cards" id="historyCardsWrap">
+                <!-- نمای کارتی موبایل با جاوااسکریپت -->
+            </div>
+
+            <div class="pagination-bar" id="historyPagination">
+                <!-- با جاوااسکریپت -->
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<!-- ============================= مودال ثبت ورود/خروج کالا ============================= -->
+<div class="modal-overlay" id="stockModalOverlay">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="stockModalTitle">ثبت ورود/خروج کالا</h3>
+            <button class="modal-close" id="stockModalClose" type="button" aria-label="بستن">✕</button>
+        </div>
+        <div class="modal-body">
+            <form id="stockForm">
+                <input type="hidden" id="stockItemId">
+                <div class="form-group">
+                    <label>کالا</label>
+                    <div class="stock-item-name" id="stockItemName"></div>
+                    <div class="stock-item-qty" id="stockItemCurrentQty"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>نوع تراکنش <span class="req">*</span></label>
+                    <div class="segmented" id="stockTypeSegmented">
+                        <button type="button" class="segmented-btn active" data-type="in">
+                            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+                            ورود
+                        </button>
+                        <button type="button" class="segmented-btn" data-type="out">
+                            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14"/></svg>
+                            خروج
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group" id="fg-stock-quantity">
+                    <label>تعداد <span class="req">*</span></label>
+                    <input type="number" class="form-control" id="stockQuantity" min="1" step="1" placeholder="0">
+                    <div class="field-error">تعداد باید عددی مثبت باشد.</div>
+                </div>
+
+                <div class="form-group">
+                    <label id="stockRecipientLabel">گیرنده / مقصد</label>
+                    <input type="text" class="form-control" id="stockRecipient" placeholder="مثلاً: تحویل بخش IT یا آقای رضایی">
+                </div>
+
+                <div class="form-group">
+                    <label>توضیحات</label>
+                    <textarea class="form-control" id="stockNote" placeholder="اختیاری"></textarea>
+                </div>
+
+                <div class="form-group performed-by-preview">
+                    <label>ثبت‌کننده</label>
+                    <div class="performed-by-value" id="stockPerformedByPreview">—</div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" id="stockCancelBtn" type="button">انصراف</button>
+            <button class="btn btn-primary" id="stockSaveBtn" type="button" data-write-trigger>ثبت تراکنش</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================= مودال QR دسته‌بندی ============================= -->
+<div class="modal-overlay" id="qrModalOverlay">
+    <div class="modal qr-modal">
+        <div class="modal-header">
+            <h3 id="qrModalTitle">QR دسته‌بندی</h3>
+            <button class="modal-close" id="qrModalClose" type="button" aria-label="بستن">✕</button>
+        </div>
+        <div class="modal-body qr-modal-body">
+            <div id="qrCodeContainer"></div>
+            <p class="qr-modal-hint">این کد، نام دسته‌بندی را نشان می‌دهد و برای چسباندن روی قفسه/کارتن چاپ می‌شود.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" id="qrCloseBtn" type="button">بستن</button>
+            <button class="btn btn-primary" id="qrPrintBtn" type="button">
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                چاپ برچسب
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================= مودال افزودن/ویرایش ============================= -->
+<div class="modal-overlay" id="itemModalOverlay">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="itemModalTitle">افزودن کالای جدید</h3>
+            <button class="modal-close" id="itemModalClose" type="button" aria-label="بستن">✕</button>
+        </div>
+        <div class="modal-body">
+            <form id="itemForm">
+                <input type="hidden" id="itemId">
+
+                <div class="form-group" id="fg-category">
+                    <label>دسته‌بندی <span class="req">*</span></label>
+                    <input type="text" class="form-control" id="itemCategory" list="categoryOptions" placeholder="مثلاً: تجهیزات برق" autocomplete="off">
+                    <datalist id="categoryOptions"></datalist>
+                    <div class="field-error">دسته‌بندی نباید خالی باشد.</div>
+                </div>
+
+                <div class="form-group" id="fg-name">
+                    <label>نام کالا <span class="req">*</span></label>
+                    <input type="text" class="form-control" id="itemName" placeholder="مثلاً: پریز برق">
+                    <div class="field-error">نام کالا نباید خالی باشد.</div>
+                </div>
+
+                <div class="form-group">
+                    <label>برند / مشخصات</label>
+                    <input type="text" class="form-control" id="itemBrand" placeholder="اختیاری">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group" id="fg-quantity">
+                        <label>تعداد <span class="req">*</span></label>
+                        <input type="number" class="form-control" id="itemQuantity" min="0" step="1" placeholder="0">
+                        <div class="field-error">تعداد باید یک عدد مثبت باشد.</div>
+                    </div>
+                    <div class="form-group">
+                        <label>واحد</label>
+                        <select class="form-control" id="itemUnit">
+                            <option value="عدد">عدد</option>
+                            <option value="جعبه">جعبه</option>
+                            <option value="بسته">بسته</option>
+                            <option value="دستگاه">دستگاه</option>
+                            <option value="متر">متر</option>
+                            <option value="کیلوگرم">کیلوگرم</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>توضیحات</label>
+                    <textarea class="form-control" id="itemNotes" placeholder="اختیاری"></textarea>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" id="itemCancelBtn" type="button">انصراف</button>
+            <button class="btn btn-primary" id="itemSaveBtn" type="button" data-write-trigger>ذخیره</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================= مودال تأیید حذف ============================= -->
+<div class="modal-overlay" id="deleteModalOverlay">
+    <div class="modal" style="max-width: 380px;">
+        <div class="modal-header">
+            <h3>تأیید حذف کالا</h3>
+            <button class="modal-close" id="deleteModalClose" type="button" aria-label="بستن">✕</button>
+        </div>
+        <div class="modal-body">
+            <p class="confirm-text">
+                آیا از حذف کالای «<strong id="deleteItemName"></strong>» مطمئن هستید؟
+                این عملیات غیرقابل بازگشت است.
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" id="deleteCancelBtn" type="button">انصراف</button>
+            <button class="btn btn-danger" id="deleteConfirmBtn" type="button" data-write-trigger>حذف کالا</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================= مودال انتخاب/بازیابی پروفایل ثابت (نسخه‌ی ۲.۰.۲) ============================= -->
+<div class="modal-overlay" id="profileGateOverlay">
+    <div class="modal" style="max-width: 460px;">
+
+        <!-- گام ۱: انتخاب یکی از نام‌های هنوز‌آزاد، یا بازیابی، یا بازدیدکننده -->
+        <div id="gateStepChoose">
+            <div class="modal-header">
+                <h3>شما کدام‌یک از این افراد هستید؟</h3>
+            </div>
+            <div class="modal-body">
+                <div class="profile-choice-list" id="gateUnclaimedList"><!-- با جاوااسکریپت پر می‌شود --></div>
+                <p class="profile-modal-hint" id="gateNoneLeftHint" hidden>هر سه پروفایل قبلاً انتخاب شده‌اند.</p>
+                <button class="link-btn" id="gateRecoverLinkBtn" type="button">پروفایل خودم را قبلاً ساخته‌ام (بازیابی با دستگاه جدید)</button>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" id="gateVisitorBtn" type="button">ادامه به‌عنوان بازدیدکننده</button>
+            </div>
+        </div>
+
+        <!-- گام ۲الف: تنظیم رمز بازیابی بعد از انتخاب یک نام هنوز‌آزاد -->
+        <div id="gateStepClaim" hidden>
+            <div class="modal-header">
+                <h3>تنظیم رمز بازیابی — <span id="gateClaimName"></span></h3>
+                <button class="modal-close" id="gateClaimBackBtn" type="button" aria-label="بازگشت">✕</button>
+            </div>
+            <div class="modal-body">
+                <p class="profile-modal-hint">این رمز فقط برای وصل‌کردن دستگاه‌های دیگر شما به همین پروفایل استفاده می‌شود.</p>
+                <div class="form-group" id="fg-claim-password">
+                    <label>رمز بازیابی <span class="req">*</span></label>
+                    <input type="password" class="form-control" id="claimPassword" placeholder="حداقل ۸ کاراکتر" dir="ltr">
+                    <div class="field-error">رمز بازیابی باید حداقل ۸ کاراکتر باشد.</div>
+                </div>
+                <div class="form-group" id="fg-claim-password-confirm">
+                    <label>تکرار رمز <span class="req">*</span></label>
+                    <input type="password" class="form-control" id="claimPasswordConfirm" dir="ltr">
+                    <div class="field-error">تکرار رمز با رمز وارد‌شده یکسان نیست.</div>
+                </div>
+                <div class="form-group" id="fg-claim-email">
+                    <label>ایمیل <span class="req">*</span></label>
+                    <input type="email" class="form-control" id="claimEmail" dir="ltr">
+                    <div class="field-error">ایمیل نباید خالی و باید معتبر باشد.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" id="gateClaimCancelBtn" type="button">بازگشت</button>
+                <button class="btn btn-primary" id="gateClaimSubmitBtn" type="button" data-write-trigger>ثبت و ورود</button>
+            </div>
+        </div>
+
+        <!-- گام ۲ب: بازیابی پروفایل روی دستگاه جدید -->
+        <div id="gateStepRecover" hidden>
+            <div class="modal-header">
+                <h3>بازیابی پروفایل</h3>
+                <button class="modal-close" id="gateRecoverBackBtn" type="button" aria-label="بازگشت">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>شما کدام‌یک هستید؟ <span class="req">*</span></label>
+                    <select class="form-control" id="recoverProfileSelect"></select>
+                </div>
+                <div class="form-group" id="fg-recover-password">
+                    <label>رمز بازیابی <span class="req">*</span></label>
+                    <input type="password" class="form-control" id="recoverPassword" dir="ltr">
+                    <div class="field-error">رمز بازیابی نادرست است.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" id="gateRecoverCancelBtn" type="button">بازگشت</button>
+                <button class="btn btn-primary" id="gateRecoverSubmitBtn" type="button" data-write-trigger>ورود</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ============================= مودال حساب من (نسخه‌ی ۲.۰.۲) ============================= -->
+<div class="modal-overlay" id="accountModalOverlay">
+    <div class="modal" style="max-width: 420px;">
+        <div class="modal-header">
+            <h3>حساب من</h3>
+            <button class="modal-close" id="accountModalClose" type="button" aria-label="بستن">✕</button>
+        </div>
+        <div class="modal-body">
+            <p class="profile-modal-hint" id="accountStatusText">شما وارد شده‌اید به‌عنوان: —</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" id="accountUnlinkBtn" type="button" hidden data-write-trigger>این دستگاه را از این پروفایل جدا کن</button>
+            <button class="btn btn-primary" id="accountChoosePrimaryBtn" type="button" hidden>انتخاب پروفایل</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================= مودال تاریخچه‌ی یک کالا ============================= -->
+<div class="modal-overlay" id="itemHistoryModalOverlay">
+    <div class="modal modal-lg">
+        <div class="modal-header">
+            <h3>تاریخچه‌ی <span id="itemHistoryItemName"></span></h3>
+            <button class="modal-close" id="itemHistoryModalClose" type="button" aria-label="بستن">✕</button>
+        </div>
+        <div class="modal-body">
+            <ul class="history-list" id="itemHistoryList">
+                <!-- با جاوااسکریپت -->
+            </ul>
+            <p class="history-empty" id="itemHistoryEmpty" hidden>هنوز هیچ تراکنشی برای این کالا ثبت نشده است.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" id="itemHistoryCloseBtn" type="button">بستن</button>
+        </div>
+    </div>
+</div>
+
+<!-- ======================= مودال پیشرفت دانلود Excel/PDF (نسخه‌ی ۲.۰.۱) ======================= -->
+<!-- بدون دکمه‌ی بستن و بدون امکان کلیک روی بک‌دراپ: تا پایان کار، کل صفحه قفل است -->
+<div class="modal-overlay export-progress-overlay" id="exportProgressModalOverlay">
+    <div class="modal export-progress-modal" role="alertdialog" aria-live="polite" aria-label="در حال آماده‌سازی فایل خروجی">
+        <div class="export-progress-body">
+            <div class="export-progress-icon" aria-hidden="true">⬇</div>
+            <div class="export-progress-percent" id="exportProgressPercent">۰٪</div>
+            <div class="export-progress-bar-track">
+                <div class="export-progress-bar-fill" id="exportProgressBarFill"></div>
+            </div>
+            <p class="export-progress-status" id="exportProgressStatus">در حال آماده‌سازی اطلاعات...</p>
+        </div>
+    </div>
+</div>
+
+<!-- ============================= Toast Stack ============================= -->
+<div class="toast-stack" id="toastStack"></div>
+
+<script src="assets/js/vendor/bcrypt.min.js"></script>
+<script src="assets/js/offline/seed-data.js"></script>
+<script src="assets/js/offline/offline-api.js"></script>
+<script src="assets/js/bundle.min.js?v=3.0.0"></script>
+<script src="assets/js/offline/native-extras.js"></script>
+</body>
+</html>

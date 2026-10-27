@@ -1,0 +1,9 @@
+{
+  "appId": "ir.parsoonbam.anbar",
+  "appName": "انبار پرسون",
+  "webDir": "www",
+  "backgroundColor": "#f4f6f8",
+  "android": {
+    "allowMixedContent": false
+  }
+}

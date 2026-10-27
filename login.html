@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ورود | مدیریت انبار پرسون بام بین‌الملل</title>
+<!-- فونت Self-host شده (بدون وابستگی به CDN خارجی) — نیازی به preconnect نیست. -->
+<link rel="preload" as="font" type="font/woff2" crossorigin href="assets/fonts/Vazirmatn[wght].woff2?v=2.0.25">
+<link rel="stylesheet" href="assets/css/vazirmatn-font-face.css?v=2.0.25">
+<meta name="theme-color" content="#16324f">
+<link rel="icon" href="assets/icons/icon-192.webp" type="image/webp">
+<link rel="stylesheet" href="assets/css/style.min.css?v=2.0.25">
+</head>
+<body class="login-body">
+
+<div class="login-shell">
+    <div class="login-card">
+        <div class="login-brand">
+            <div class="brand-mark">پب</div>
+            <div>
+                <div class="brand-name">پرسون بام بین‌الملل</div>
+                <div class="brand-sub">سامانه مدیریت انبار</div>
+            </div>
+        </div>
+
+        <button class="btn btn-ghost theme-toggle login-theme-toggle" id="themeToggleBtn" type="button" aria-label="تغییر حالت تاریک/روشن" title="حالت تاریک/روشن">
+            <svg class="btn-icon icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+            <svg class="btn-icon icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>
+        </button>
+
+        <h1 class="login-title">ورود به سامانه</h1>
+        <p class="login-sub">برای دسترسی به مدیریت انبار، رمز عبور مشترک را وارد کنید.</p>
+
+        <form id="loginForm" class="login-form">
+            <div class="form-group" id="fg-login-password">
+                <label>رمز عبور</label>
+                <div class="password-field">
+                    <input type="password" class="form-control" id="loginPassword" placeholder="رمز عبور" autocomplete="current-password" autofocus>
+                    <button type="button" class="password-toggle" id="passwordToggleBtn" aria-label="نمایش/عدم‌نمایش رمز">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                </div>
+                <div class="field-error" id="loginError"></div>
+            </div>
+
+            <button type="submit" class="btn btn-primary login-submit" id="loginSubmitBtn">ورود</button>
+        </form>
+
+        <div class="login-footer">پرسون بام بین‌الملل &copy; <span id="footerYear"></span></div>
+    </div>
+</div>
+
+<script src="assets/js/vendor/bcrypt.min.js"></script>
+<script src="assets/js/offline/seed-data.js"></script>
+<script src="assets/js/offline/offline-api.js"></script>
+<script>
+(function () {
+    'use strict';
+
+    var REDIRECT_TARGET = 'index.html';
+    try { if (localStorage.getItem('anbar_auth_ok') === '1') { location.replace('index.html'); } } catch (e) {}
+
+    document.getElementById('footerYear').textContent = new Date().getFullYear();
+
+    // اعمال حالت تاریک/روشن ذخیره‌شده حتی قبل از ورود
+    var THEME_KEY = 'anbar-parsoon-theme';
+    function applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+    }
+    applyTheme(localStorage.getItem(THEME_KEY) || 'light');
+    document.getElementById('themeToggleBtn').addEventListener('click', function () {
+        var current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+        var next = current === 'dark' ? 'light' : 'dark';
+        applyTheme(next);
+        localStorage.setItem(THEME_KEY, next);
+    });
+
+    var passwordInput = document.getElementById('loginPassword');
+    document.getElementById('passwordToggleBtn').addEventListener('click', function () {
+        passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
+    });
+
+    var form = document.getElementById('loginForm');
+    var errorBox = document.getElementById('loginError');
+    var fgPassword = document.getElementById('fg-login-password');
+    var submitBtn = document.getElementById('loginSubmitBtn');
+
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        fgPassword.classList.remove('invalid');
+        errorBox.textContent = '';
+
+        var password = passwordInput.value;
+        if (!password) {
+            fgPassword.classList.add('invalid');
+            errorBox.textContent = 'رمز عبور را وارد کنید.';
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'در حال بررسی...';
+
+        fetch('api/auth.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'login', password: password }),
+        })
+            .then(function (res) {
+                return res.json().then(function (json) { return { ok: res.ok, json: json }; });
+            })
+            .then(function (result) {
+                if (!result.ok || !result.json.success) {
+                    throw new Error((result.json && result.json.message) || 'ورود ناموفق بود.');
+                }
+                window.location.href = REDIRECT_TARGET;
+            })
+            .catch(function (err) {
+                fgPassword.classList.add('invalid');
+                errorBox.textContent = err.message || 'خطایی رخ داد. دوباره تلاش کنید.';
+                passwordInput.focus();
+                passwordInput.select();
+            })
+            .finally(function () {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'ورود';
+            });
+    });
+})();
+</script>
+</body>
+</html>
